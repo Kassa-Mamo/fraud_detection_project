@@ -1,57 +1,138 @@
 # Import necessary libraries
 import pandas as pd
+import os
 
-# Paths to the datasets (adjusted according to your file structure)
+# Define paths to the datasets (adjust according to your file structure)
 creditcard_path = "C:/Users/user/Desktop/10 Academy- Machine-Learning/10 Academy W8 & 9/Data/creditcard.csv"
 fraud_data_path = "C:/Users/user/Desktop/10 Academy- Machine-Learning/10 Academy W8 & 9/Data/Fraud_Data.csv"
 ip_address_path = "C:/Users/user/Desktop/10 Academy- Machine-Learning/10 Academy W8 & 9/Data/IpAddress_to_Country.csv"
 
-# Load the datasets
-creditcard_df = pd.read_csv(creditcard_path)
-fraud_data_df = pd.read_csv(fraud_data_path)
-ip_address_df = pd.read_csv(ip_address_path)
+def load_data(file_path):
+    """
+    Loads a dataset from the specified file path.
 
-# Display first few rows of each dataframe to understand structure
-print("Credit Card Data:")
+    Args:
+        file_path (str): Path to the dataset file.
+
+    Returns:
+        pd.DataFrame: Loaded dataset as a Pandas DataFrame.
+    """
+    if not os.path.exists(file_path):
+        print(f"Error: File not found at {file_path}")
+        return None
+    try:
+        df = pd.read_csv(file_path)
+        print(f"Successfully loaded {file_path}")
+        return df
+    except Exception as e:
+        print(f"Error loading {file_path}: {e}")
+        return None
+
+# Load datasets
+creditcard_df = load_data(creditcard_path)
+fraud_data_df = load_data(fraud_data_path)
+ip_address_df = load_data(ip_address_path)
+
+# Ensure datasets are loaded before proceeding
+if creditcard_df is None or fraud_data_df is None or ip_address_df is None:
+    print("Error: One or more datasets failed to load. Check file paths and formats.")
+    exit()
+
+# Display first few rows to understand data structure
+print("\nCredit Card Data Sample:")
 print(creditcard_df.head(), "\n")
 
-print("Fraud Data:")
+print("Fraud Data Sample:")
 print(fraud_data_df.head(), "\n")
 
-print("IP Address Data:")
+print("IP Address Data Sample:")
 print(ip_address_df.head(), "\n")
 
-# Task 1: Data Preprocessing for credit card data
-# Check for missing values
-print("Missing Values in Credit Card Data:")
-print(creditcard_df.isnull().sum())
+# Task 1: Handle Missing Values in Credit Card Data
+def clean_creditcard_data(df):
+    """
+    Cleans the credit card dataset by handling missing values.
 
-# Handle missing values (if any)
-# For simplicity, let's drop rows with missing values (you can choose to fill them instead)
-creditcard_df = creditcard_df.dropna()
+    Args:
+        df (pd.DataFrame): Credit card dataset.
 
-# Task 2: Combine data (if necessary)
-# For this task, we'll just show how to merge based on a common field, assuming 'Ip' is common
-# Ensure the column name in fraud_data_df and ip_address_df matches for merging
-merged_df = pd.merge(fraud_data_df, ip_address_df, left_on="Ip", right_on="lower_bound_ip_address", how="left")
+    Returns:
+        pd.DataFrame: Cleaned dataset.
+    """
+    print("Missing Values in Credit Card Data:")
+    print(df.isnull().sum())
 
-# Check the resulting merged data
-print("Merged Data (Fraud + IP Address Data):")
-print(merged_df.head(), "\n")
+    # Drop rows with missing values
+    df_cleaned = df.dropna()
+    print("Credit card data cleaned. Rows with missing values dropped.\n")
+    return df_cleaned
+
+creditcard_df = clean_creditcard_data(creditcard_df)
+
+# Task 2: Merge Fraud Data with IP Address Data
+def merge_fraud_ip_data(fraud_df, ip_df):
+    """
+    Merges fraud transaction data with IP address data.
+
+    Args:
+        fraud_df (pd.DataFrame): Fraud transaction dataset.
+        ip_df (pd.DataFrame): IP address dataset.
+
+    Returns:
+        pd.DataFrame: Merged dataset.
+    """
+    merged_df = pd.merge(fraud_df, ip_df, left_on="Ip", right_on="lower_bound_ip_address", how="left")
+    print("Merged Fraud and IP Address Data Sample:")
+    print(merged_df.head(), "\n")
+    return merged_df
+
+merged_fraud_df = merge_fraud_ip_data(fraud_data_df, ip_address_df)
 
 # Task 3: Data Transformation
-# If needed, let's convert the 'Amount' feature to numeric values (handle any non-numeric values)
-fraud_data_df['Amount'] = pd.to_numeric(fraud_data_df['Amount'], errors='coerce')
+def transform_fraud_data(df):
+    """
+    Transforms fraud transaction data by ensuring numeric values in the 'Amount' column.
 
-# Handle any new missing values in 'Amount'
-fraud_data_df = fraud_data_df.dropna(subset=['Amount'])
+    Args:
+        df (pd.DataFrame): Fraud transaction dataset.
 
-# Final output of processed data
+    Returns:
+        pd.DataFrame: Transformed dataset.
+    """
+    # Convert 'Amount' column to numeric, forcing invalid values to NaN
+    df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
+
+    # Remove rows where 'Amount' is missing
+    df_cleaned = df.dropna(subset=['Amount'])
+    
+    print("Fraud Data Transformation Complete: Non-numeric values in 'Amount' handled.\n")
+    return df_cleaned
+
+fraud_data_df = transform_fraud_data(fraud_data_df)
+
+# Define paths for processed data
 processed_creditcard_data_path = "C:/Users/user/Desktop/10 Academy- Machine-Learning/10 Academy W8 & 9/data/processed_creditcard_data.csv"
 processed_fraud_data_path = "C:/Users/user/Desktop/10 Academy- Machine-Learning/10 Academy W8 & 9/data/processed_fraud_data.csv"
 
-# Save cleaned data
-creditcard_df.to_csv(processed_creditcard_data_path, index=False)
-fraud_data_df.to_csv(processed_fraud_data_path, index=False)
+def save_data(df, file_path):
+    """
+    Saves a DataFrame to a CSV file.
 
-print(f"Processed data saved at {processed_creditcard_data_path} and {processed_fraud_data_path}")
+    Args:
+        df (pd.DataFrame): DataFrame to be saved.
+        file_path (str): Destination file path.
+
+    Returns:
+        None
+    """
+    try:
+        df.to_csv(file_path, index=False)
+        print(f"Processed data saved at {file_path}")
+    except Exception as e:
+        print(f"Error saving file {file_path}: {e}")
+
+# Save cleaned datasets
+save_data(creditcard_df, processed_creditcard_data_path)
+save_data(fraud_data_df, processed_fraud_data_path)
+
+print("\nData preprocessing completed successfully!")
